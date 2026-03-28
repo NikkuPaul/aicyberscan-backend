@@ -1,8 +1,8 @@
 import os
 import httpx
 
-API_KEY = os.getenv("PORTSCAN_API_KEY")
-API_URL = os.getenv("PORTSCAN_API_URL")
+API_KEY = os.getenv("qsJ37urm0JKptNhBkALpEFiT6wq12GeG")
+API_URL = os.getenv("https://api.shodan.io/shodan/host")
 
 async def scan_ports(domain: str):
     if not API_KEY or not API_URL:
