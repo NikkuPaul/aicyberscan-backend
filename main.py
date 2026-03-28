@@ -2,11 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from subdomains import find_subdomains
-from directories import scan_directories
-from ports import scan_ports
-from vulns import scan_vulnerabilities
-from dns_whois import dns_lookup, whois_lookup, extract_email_security
+from scanners.subdomains import find_subdomains
+from scanners.directories import scan_directories
+from scanners.ports import scan_ports
+from scanners.vulns import scan_vulnerabilities
+from scanners.dns_whois import dns_lookup, whois_lookup, extract_email_security
+
 
 app = FastAPI()
 
