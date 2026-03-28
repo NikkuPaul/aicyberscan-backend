@@ -1,21 +1,19 @@
-import os
 import httpx
 
-DNS_URL = os.getenv("https://api.hackertarget.com/dnslookup/?q=")
-WHOIS_URL = os.getenv("https://api.hackertarget.com/whois/?q=")
-
 async def dns_lookup(domain: str):
+    url = f"https://api.hackertarget.com/dnslookup/?q={domain}"
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(f"{DNS_URL}{domain}", timeout=15)
+            r = await client.get(url, timeout=15)
             return r.text
     except:
         return "DNS lookup failed"
 
 async def whois_lookup(domain: str):
+    url = f"https://api.hackertarget.com/whois/?q={domain}"
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(f"{WHOIS_URL}{domain}", timeout=15)
+            r = await client.get(url, timeout=15)
             return r.text
     except:
         return "WHOIS lookup failed"
