@@ -1,28 +1,24 @@
 import httpx
 import re
 
+SSL_LABS = "https://api.ssllabs.com/api/v3/analyze?host="
 CVE_API = "https://cve.circl.lu/api/search/"
 
-
 async def fetch_headers(domain: str):
-    url = f"https://api.hackertarget.com/httpheaders/?q={domain}"
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(url, timeout=20)
-            return r.text.lower()
+            r = await client.get(f"https://{domain}", timeout=20)
+            return r.headers
     except:
-        return ""
+        return {}
 
-
-async def fetch_tls(domain: str):
-    url = f"https://api.hackertarget.com/sslinfo/?q={domain}"
+async def fetch_ssl(domain: str):
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(url, timeout=20)
-            return r.text.lower()
+            r = await client.get(SSL_LABS + domain, timeout=40)
+            return r.json()
     except:
-        return ""
-
+        return {"error": "SSL scan failed"}
 
 async def lookup_cve(tech: str):
     try:
@@ -35,81 +31,75 @@ async def lookup_cve(tech: str):
     except:
         return []
 
-
-def analyze_security_headers(headers: str):
+def analyze_security_headers(headers):
     issues = []
 
-    if "x-frame-options" not in headers:
+    h = {k.lower(): v for k, v in headers.items()}
+
+    if "x-frame-options" not in h:
         issues.append("Missing X-Frame-Options (clickjacking risk)")
-
-    if "strict-transport-security" not in headers:
+    if "strict-transport-security" not in h:
         issues.append("Missing HSTS (MITM risk)")
-
-    if "x-content-type-options" not in headers:
+    if "x-content-type-options" not in h:
         issues.append("Missing X-Content-Type-Options (MIME sniffing risk)")
-
-    if "content-security-policy" not in headers:
+    if "content-security-policy" not in h:
         issues.append("Missing CSP (XSS risk)")
 
     return issues
 
-
-def detect_technologies(headers: str):
+def detect_technologies(headers):
     tech = []
+    server = headers.get("server", "").lower()
 
-    if "apache" in headers:
+    if "apache" in server:
         tech.append("apache")
-    if "nginx" in headers:
+    if "nginx" in server:
         tech.append("nginx")
-    if "php" in headers:
-        tech.append("php")
-    if "wordpress" in headers:
-        tech.append("wordpress")
-    if "cloudflare" in headers:
-        tech.append("cloudflare")
-    if "iis" in headers:
+    if "iis" in server:
         tech.append("microsoft iis")
+    if "cloudflare" in server:
+        tech.append("cloudflare")
+
+    powered = headers.get("x-powered-by", "").lower()
+    if "php" in powered:
+        tech.append("php")
+    if "wordpress" in powered:
+        tech.append("wordpress")
 
     return tech
 
-
 async def scan_vulnerabilities(domain: str):
     headers = await fetch_headers(domain)
-    tls = await fetch_tls(domain)
+    ssl = await fetch_ssl(domain)
 
     vulnerabilities = []
 
-    # 1. Security header issues
+    # 1. Security headers
     header_issues = analyze_security_headers(headers)
     vulnerabilities.extend(header_issues)
 
-    # 2. Technology detection
+    # 2. Tech stack
     tech_stack = detect_technologies(headers)
 
     tech_cves = {}
     for tech in tech_stack:
         tech_cves[tech] = await lookup_cve(tech)
 
-    # 3. TLS issues
-    if "expired" in tls:
-        vulnerabilities.append("SSL certificate expired")
-    if "self-signed" in tls:
-        vulnerabilities.append("Self-signed SSL certificate")
-    if "tlsv1" in tls:
-        vulnerabilities.append("Weak TLS version detected (TLS 1.0)")
+    # 3. SSL issues
+    if "endpoints" in ssl:
+        endpoint = ssl["endpoints"][0]
+        grade = endpoint.get("grade", "Unknown")
+        if grade not in ["A+", "A", "A-"]:
+            vulnerabilities.append(f"Weak SSL grade: {grade}")
 
     # 4. CMS vulnerabilities
     if "wordpress" in tech_stack:
         vulnerabilities.append("WordPress detected — check for plugin vulnerabilities")
 
-    # 5. Subdomain takeover (basic check)
-    if "no a records" in headers:
-        vulnerabilities.append("Possible subdomain takeover risk")
-
     return {
         "security_headers": header_issues,
         "tech_stack": tech_stack,
         "cve_matches": tech_cves,
-        "tls_issues": tls,
+        "ssl_report": ssl,
         "overall_vulnerabilities": vulnerabilities
     }
