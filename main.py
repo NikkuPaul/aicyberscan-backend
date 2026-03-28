@@ -20,7 +20,7 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"message": "Free Cyber Scan API Running"}
+    return {"message": "Advanced Cyber Scan API Running"}
 
 @app.get("/scan")
 async def scan(domain: str):
@@ -29,20 +29,21 @@ async def scan(domain: str):
     # Subdomains (crt.sh)
     response["subdomains"] = await find_subdomains(domain)
 
-    # Directory scan (HTTP headers)
+    # Directory discovery (Wayback Machine)
     response["directories"] = await scan_directories(domain)
 
-    # Port scan (HackerTarget Nmap)
+    # Port scan (ipapi + free port DB)
     response["ports"] = await scan_ports(domain)
 
-    # Vulnerability scan (CVE + TLS + headers + CMS)
+    # Vulnerability scan (CVE + TLS + headers + CMS + takeover)
     response["vulnerabilities"] = await scan_vulnerabilities(domain)
 
-    # DNS + WHOIS
+    # DNS (Cloudflare)
     dns_result = await dns_lookup(domain)
-    whois_result = await whois_lookup(domain)
-
     response["dns"] = dns_result
+
+    # WHOIS (WhoisFreaks)
+    whois_result = await whois_lookup(domain)
     response["whois"] = whois_result
 
     # Email security (SPF/DMARC)
