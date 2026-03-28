@@ -1,8 +1,8 @@
 import os
 import httpx
 
-API_KEY = os.getenv("TECHSTACK_API_KEY")
-API_URL = os.getenv("TECHSTACK_API_URL")  # e.g. https://api.example.com/tech
+API_KEY = os.getenv("ed8119ca-0d4d-44c0-acb1-8c6048b98513")
+API_URL = os.getenv("https://api.builtwith.com/v21/api.json")  # e.g. https://api.example.com/tech
 
 async def detect_tech_stack(domain: str):
     if not API_KEY or not API_URL:
