@@ -1,8 +1,8 @@
 import os
 import httpx
 
-API_KEY = os.getenv("DIRSCAN_API_KEY")
-API_URL = os.getenv("DIRSCAN_API_URL")
+API_KEY = os.getenv("https://urlscan.io/api/v1/scan")
+API_URL = os.getenv("019d321c-d271-770c-b5ad-0ff77cd87558")
 
 async def scan_directories(domain: str):
     if not API_KEY or not API_URL:
