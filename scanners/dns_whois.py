@@ -1,32 +1,34 @@
 import httpx
 
 async def dns_lookup(domain: str):
-    url = f"https://api.hackertarget.com/dnslookup/?q={domain}"
+    url = f"https://cloudflare-dns.com/dns-query?name={domain}&type=ANY"
+    headers = {"accept": "application/dns-json"}
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(url, timeout=15)
-            return r.text
+            r = await client.get(url, headers=headers, timeout=20)
+            return r.json()
     except:
-        return "DNS lookup failed"
+        return {"error": "DNS lookup failed"}
 
 async def whois_lookup(domain: str):
-    url = f"https://api.hackertarget.com/whois/?q={domain}"
+    url = f"https://api.whoisfreaks.com/v1.0/whois?whois=live&domainName={domain}"
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get(url, timeout=15)
-            return r.text
+            r = await client.get(url, timeout=20)
+            return r.json()
     except:
-        return "WHOIS lookup failed"
+        return {"error": "WHOIS lookup failed"}
 
-def extract_email_security(dns_text: str):
+def extract_email_security(dns_json):
     spf = None
     dmarc = None
 
-    for line in dns_text.splitlines():
-        if "v=spf1" in line.lower():
-            spf = line.strip()
-        if "v=dmarc1" in line.lower():
-            dmarc = line.strip()
+    if "Answer" in dns_json:
+        for record in dns_json["Answer"]:
+            if "v=spf1" in record.get("data", "").lower():
+                spf = record["data"]
+            if "v=dmarc1" in record.get("data", "").lower():
+                dmarc = record["data"]
 
     score = "Strong"
     warnings = []
