@@ -1,10 +1,10 @@
 import os
 import httpx
 
-API_KEY = os.getenv("TECHSTACK_API_KEY")
-API_URL = os.getenv("TECHSTACK_API_URL")  # e.g. https://api.example.com/tech
+API_KEY = os.getenv("SUBDOMAIN_API_KEY")
+API_URL = os.getenv("SUBDOMAIN_API_URL")
 
-async def detect_tech_stack(domain: str):
+async def find_subdomains(domain: str):
     if not API_KEY or not API_URL:
         return []
 
@@ -14,11 +14,9 @@ async def detect_tech_stack(domain: str):
                 API_URL,
                 params={"domain": domain},
                 headers={"Authorization": f"Bearer {API_KEY}"},
-                timeout=15
+                timeout=30
             )
             data = r.json()
-            # adjust this to your provider's response
-            return data.get("technologies", [])
+            return data.get("subdomains", [])
     except:
         return []
-
